@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         //be sure to replace "bhavukm" with your own Docker Hub username
-        DOCKER_IMAGE_NAME = "bhavukm/train-schedule"
+        DOCKER_IMAGE_NAME = "devopseasylearning2021/train-schedule"
     }
     stages {
         stage('Build') {
@@ -14,33 +14,35 @@ pipeline {
         }
         stage('Build Docker Image') {
             when {
-                branch 'master'
+                branch 'branch-peter'
             }
             steps {
-                script {
-                    app = docker.build(DOCKER_IMAGE_NAME)
-                    app.inside {
-                        sh 'echo Hello, World!'
-                    }
-                }
+               sh '''
+            sudo docker build -t devopseasylearning2021/train-schedule:001 .
+            '''
             }
         }
+ stage('Docker Login') {
+
+			steps {
+				sh 'echo $DOCKERHUB_CREDENTIALS_PSW | sudo docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+			}
+		}
+
+
         stage('Push Docker Image') {
             when {
-                branch 'master'
+                branch 'branch-peter'
             }
             steps {
-                script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker_hub_login') {
-                        app.push("${env.BUILD_NUMBER}")
-                        app.push("latest")
-                    }
-                }
+               sh '''
+            sudo docker push devopseasylearning2021/train-schedule:001
+            '''
             }
         }
         stage('CanaryDeploy') {
             when {
-                branch 'master'
+                branch 'branch-peter'
             }
             environment { 
                 CANARY_REPLICAS = 1
@@ -55,7 +57,7 @@ pipeline {
         }
         stage('DeployToProduction') {
             when {
-                branch 'master'
+                branch 'branch-peter'
             }
             environment { 
                 CANARY_REPLICAS = 0
